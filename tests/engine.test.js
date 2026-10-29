@@ -1,5 +1,66 @@
-import{test}from'node:test';import assert from'node:assert/strict';import{generate,circleRect,reflect,validSave}from'../engine.js';
-test('seeded levels reproduce exactly, including drops',()=>{assert.deepEqual(generate(17,42,6),generate(17,42,6));assert.notDeepEqual(generate(17,42,6),generate(18,42,6))});
-test('1000 levels fit narrow and wide screens with separated solid obstacles',()=>{for(let level=1;level<=1000;level++)for(const columns of[5,8,12]){const bricks=generate(level,123,columns);assert(bricks.some(b=>b.type!=='solid'));for(const b of bricks){assert(b.x>=0&&b.x+b.w<=600);assert(b.y+b.h<.6);if(b.type==='solid'){const solids=bricks.filter(o=>o!==b&&o.type==='solid');assert(solids.every(o=>Math.abs(o.x-b.x)>b.w+16))}}}});
-test('side and corner collisions reflect away and preserve speed',()=>{const rect={x:100,y:100,w:60,h:30};for(const ball of[{x:95,y:110,vx:200,vy:20},{x:95,y:95,vx:100,vy:100},{x:130,y:95,vx:10,vy:200}]){const n=circleRect(ball,rect);assert(n);const speed=Math.hypot(ball.vx,ball.vy);reflect(ball,n);assert(ball.vx*n.x+ball.vy*n.y>=0);assert(Math.abs(Math.hypot(ball.vx,ball.vy)-speed)<1e-6)}assert.equal(circleRect({x:10,y:10},rect),null)});
-test('malformed saves are rejected and valid damaged boards survive',()=>{const s={version:1,level:3,seed:1,score:100,lives:2,bricks:generate(3,1)};s.bricks[0].hp=0;assert(validSave(s));assert(!validSave({...s,bricks:[{...s.bricks[0],x:NaN}]}));assert(!validSave({...s,lives:-1}));assert(!validSave({version:1}));assert(!validSave(null))});
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { generate, circleRect, reflect, validSave, layout } from "../engine.js";
+test("seeded levels reproduce exactly, including drops", () => {
+  assert.deepEqual(generate(17, 42, 6), generate(17, 42, 6));
+  assert.notDeepEqual(generate(17, 42, 6), generate(18, 42, 6));
+});
+test("1000 levels fit narrow and wide screens with separated solid obstacles", () => {
+  for (let level = 1; level <= 1000; level++)
+    for (const columns of [5, 8, 12]) {
+      const bricks = generate(level, 123, columns);
+      assert(bricks.some((b) => b.type !== "solid"));
+      for (const b of bricks) {
+        assert(b.x >= 0 && b.x + b.w <= 600);
+        assert(b.y + b.h < 0.6);
+        if (b.type === "solid") {
+          const solids = bricks.filter((o) => o !== b && o.type === "solid");
+          assert(solids.every((o) => Math.abs(o.x - b.x) > b.w + 16));
+        }
+      }
+    }
+});
+test("side and corner collisions reflect away and preserve speed", () => {
+  const rect = { x: 100, y: 100, w: 60, h: 30 };
+  for (const ball of [
+    { x: 95, y: 110, vx: 200, vy: 20 },
+    { x: 95, y: 95, vx: 100, vy: 100 },
+    { x: 130, y: 95, vx: 10, vy: 200 },
+  ]) {
+    const n = circleRect(ball, rect);
+    assert(n);
+    const speed = Math.hypot(ball.vx, ball.vy);
+    reflect(ball, n);
+    assert(ball.vx * n.x + ball.vy * n.y >= 0);
+    assert(Math.abs(Math.hypot(ball.vx, ball.vy) - speed) < 1e-6);
+  }
+  assert.equal(circleRect({ x: 10, y: 10 }, rect), null);
+});
+test("malformed saves are rejected and valid damaged boards survive", () => {
+  const s = {
+    version: 1,
+    level: 3,
+    seed: 1,
+    score: 100,
+    lives: 2,
+    bricks: generate(3, 1),
+  };
+  s.bricks[0].hp = 0;
+  assert(validSave(s));
+  assert(!validSave({ ...s, bricks: [{ ...s.bricks[0], x: NaN }] }));
+  assert(!validSave({ ...s, lives: -1 }));
+  assert(!validSave({ version: 1 }));
+  assert(!validSave(null));
+});
+
+test("short landscape and tall portrait boards stay between ceiling and paddle", () => {
+  for (const height of [180, 200, 300, 600, 1000]) {
+    const l = layout(height);
+    const bricks = generate(100, 123, 8);
+    for (const b of bricks) {
+      const y = l.brickTop + (b.y - 0.105) * l.brickScale;
+      assert(y > l.ceiling + 8);
+      assert(y + b.h * l.brickScale < l.paddleY - 16);
+    }
+  }
+});

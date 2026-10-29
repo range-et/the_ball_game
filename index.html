@@ -1,21 +1,156 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f1113"><meta name="description" content="A little focus. A satisfying break. A gentle, endless brick breaker that remembers where you left off."><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"><title>Little Breaks — one brick at a time</title>
-</head>
-<body>
-<div class="app">
-<header class="masthead"><a class="brand" href="./" aria-label="Little Breaks home"><span class="brand-icon" aria-hidden="true">▦</span> little breaks<span class="brand-dot">.</span></a><span class="edition">A LITTLE EVERYDAY PLAY</span><button id="sound" class="text-button" aria-pressed="false">Sound off</button></header>
-<main>
-<aside class="sidebar"><div class="eyebrow"><span class="status-dot"></span> NO RUSH. JUST PLAY.</div><h1>A little focus.<br>A satisfying<br><span>break.</span></h1><p class="intro">Clear a few bricks.<br>Find your rhythm.<br>Take it one bounce at a time.</p><div class="side-rule"></div><div class="instructions"><span class="step">01</span><p><strong>Slide to move</strong><br>Move your finger left and right.</p><span class="step">02</span><p><strong>Keep the ball bouncing</strong><br>Catch it with your paddle.</p><span class="step">03</span><p><strong>Clear the colorful bricks</strong><br>There’s always another level.</p></div><div class="save-note"><span aria-hidden="true">↳</span><span id="save-note">Your place is saved on this device.</span></div></aside>
-<section class="game-column" aria-label="Brick breaker game">
-<div class="scorebar"><div><span class="label">LEVEL</span><strong id="level">01</strong></div><div><span class="label">SCORE</span><strong id="score">0000</strong></div><div class="lives-group"><span class="label">CHANCES</span><strong id="lives" aria-label="3 chances">● ● ●</strong></div><button id="pause" class="pause-button" aria-label="Pause game">Ⅱ <span>Pause</span></button></div>
-<div class="arena" id="arena"><canvas id="game" aria-label="Game field. Use the left and right arrow keys or slide your finger to move. Press Space to launch or pause."></canvas><div class="field-top"><span id="field-name">A FRESH START</span><span id="remaining"></span></div><div id="toast" class="toast" role="status" aria-live="polite"></div><div class="control-hint" id="control-hint"><span>←</span> SLIDE HERE TO MOVE <span>→</span></div>
-<div class="overlay" id="overlay"><section class="card" role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1" id="card"></section></div></div>
-<div class="game-footer"><span><span class="status-dot"></span> <span id="footer-status">A fresh start, whenever you like.</span></span><button id="help" class="text-button">How to play <span aria-hidden="true">↗</span></button></div>
-</section>
-</main><footer class="page-footer"><span>SMALL BREAKS. GOOD DAYS.</span><button id="settings" class="text-button">Comfort & settings</button><span class="desktop-only">MADE FOR YOUR OWN PACE</span></footer>
-</div><div id="recovery" hidden role="dialog" aria-modal="true" aria-labelledby="recovery-title"><div class="recovery-card"><span class="eyebrow">EVERYTHING IS SAFE</span><h2 id="recovery-title">Let’s get the game<br>back on screen.</h2><p id="recovery-message">The screen looks zoomed in. Your game is paused.</p><div class="pinch-demo" aria-hidden="true"><span>↘</span><span>↙</span></div><p>Place two fingers on the screen<br>and bring them together.</p><button id="fit" class="primary">Fit game to screen</button><p class="small" id="fit-note">If it stays enlarged, use the two-finger gesture above.</p></div></div>
-<script type="module" src="game.js"></script>
-</body></html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0f1113" />
+    <meta
+      name="description"
+      content="A little focus. A satisfying break. A gentle, endless brick breaker that remembers where you left off."
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="style.css" />
+    <title>Little Breaks — one brick at a time</title>
+  </head>
+  <body>
+    <div class="app">
+      <header class="masthead">
+        <a class="brand" href="./" aria-label="Little Breaks home"
+          ><span class="brand-icon" aria-hidden="true">▦</span> little
+          breaks<span class="brand-dot">.</span></a
+        ><span class="edition">A LITTLE EVERYDAY PLAY</span
+        ><button id="sound" class="text-button" aria-pressed="false">
+          Sound off
+        </button>
+      </header>
+      <main>
+        <aside class="sidebar">
+          <div class="eyebrow">
+            <span class="status-dot"></span> NO RUSH. JUST PLAY.
+          </div>
+          <h1>A little focus.<br />A satisfying<br /><span>break.</span></h1>
+          <p class="intro">
+            Clear a few bricks.<br />Find your rhythm.<br />Take it one bounce
+            at a time.
+          </p>
+          <div class="side-rule"></div>
+          <div class="instructions">
+            <span class="step">01</span>
+            <p>
+              <strong>Slide to move</strong><br />Move your finger left and
+              right.
+            </p>
+            <span class="step">02</span>
+            <p>
+              <strong>Keep the ball bouncing</strong><br />Catch it with your
+              paddle.
+            </p>
+            <span class="step">03</span>
+            <p>
+              <strong>Clear the colorful bricks</strong><br />There’s always
+              another level.
+            </p>
+          </div>
+          <div class="save-note">
+            <span aria-hidden="true">↳</span
+            ><span id="save-note">Your place is saved on this device.</span>
+          </div>
+        </aside>
+        <section class="game-column" aria-label="Brick breaker game">
+          <div class="scorebar">
+            <div>
+              <span class="label">LEVEL</span><strong id="level">01</strong>
+            </div>
+            <div>
+              <span class="label">SCORE</span><strong id="score">0000</strong>
+            </div>
+            <div class="lives-group">
+              <span class="label">CHANCES</span
+              ><strong id="lives" aria-label="3 chances">● ● ●</strong>
+            </div>
+            <button id="pause" class="pause-button" aria-label="Pause game">
+              Ⅱ <span>Pause</span>
+            </button>
+          </div>
+          <div class="arena" id="arena">
+            <canvas
+              id="game"
+              aria-label="Game field. Use the left and right arrow keys or slide your finger to move. Press Space to launch or pause."
+            ></canvas>
+            <div class="field-top">
+              <span id="field-name">A FRESH START</span
+              ><span id="remaining"></span>
+            </div>
+            <div
+              id="toast"
+              class="toast"
+              role="status"
+              aria-live="polite"
+            ></div>
+            <div class="control-hint" id="control-hint">
+              <span>←</span> SLIDE HERE TO MOVE <span>→</span>
+            </div>
+            <div class="overlay" id="overlay">
+              <section
+                class="card"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="dialog-title"
+                tabindex="-1"
+                id="card"
+              ></section>
+            </div>
+          </div>
+          <div class="game-footer">
+            <span
+              ><span class="status-dot"></span>
+              <span id="footer-status"
+                >A fresh start, whenever you like.</span
+              ></span
+            ><button id="help" class="text-button">
+              How to play <span aria-hidden="true">↗</span>
+            </button>
+          </div>
+        </section>
+      </main>
+      <footer class="page-footer">
+        <span>SMALL BREAKS. GOOD DAYS.</span
+        ><button id="settings" class="text-button">Comfort & settings</button
+        ><span class="desktop-only">MADE FOR YOUR OWN PACE</span>
+      </footer>
+    </div>
+    <div
+      id="recovery"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="recovery-title"
+    >
+      <div class="recovery-card">
+        <span class="eyebrow">EVERYTHING IS SAFE</span>
+        <h2 id="recovery-title">Let’s get the game<br />back on screen.</h2>
+        <p id="recovery-message">
+          The screen looks zoomed in. Your game is paused.
+        </p>
+        <div class="pinch-demo" aria-hidden="true">
+          <span>↘</span><span>↙</span>
+        </div>
+        <p>Place two fingers on the screen<br />and bring them together.</p>
+        <button id="fit" class="primary">Fit game to screen</button>
+        <p class="small" id="fit-note">
+          If it stays enlarged, use the two-finger gesture above.
+        </p>
+      </div>
+    </div>
+    <script type="module" src="game.js"></script>
+  </body>
+</html>
