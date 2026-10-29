@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>Phone recovery test lab</title>
+  <style>
+    body {
+      font: 15px system-ui;
+      margin: 12px;
+      background: #e9edf0;
+      color: #101820;
+    }
+    h1 {
+      font-size: 20px;
+      margin: 8px 0;
+    }
+    button,
+    select {
+      font: inherit;
+      min-height: 40px;
+      margin: 3px;
+      padding: 6px 10px;
+    }
+    #stage {
+      position: relative;
+      overflow: clip;
+      border: 2px solid #536273;
+      box-sizing: content-box;
+    }
+    iframe {
+      position: absolute;
+      inset: 0;
+      border: 0;
+      transform-origin: top left;
+    }
+    #saved {
+      display: block;
+      margin: 6px 0;
+    }
+    p {
+      margin: 6px 0;
+      font-size: 12px;
+    }
+  </style>
+  <h1>Phone layout & recovery lab</h1>
+  <p>
+    Simulated viewport magnification, not native iOS pinch or system Zoom. Local
+    test page only.
+  </p>
+  <select id="size" aria-label="Phone size">
+    <option value="320,568">Small phone · 320 × 568</option>
+    <option value="375,667">Phone · 375 × 667</option>
+    <option value="390,844" selected>Phone · 390 × 844</option>
+    <option value="430,932">Large phone · 430 × 932</option>
+    <option value="844,390">Landscape · 844 × 390</option>
+    <option value="932,430">Large landscape · 932 × 430</option></select
+  ><button id="zoom2">2× zoom</button
+  ><button id="zoom4">4× zoom</button
+  ><button id="normal">Normal size</button
+  ><button id="text">Double text size</button
+  ><button id="reload">Reload game</button
+  ><output id="saved"></output>
+  <div id="stage">
+    <iframe id="phone" title="Test phone game" src="../index.html"></iframe>
+  </div>
+  <script type="module">
+    const phone = document.querySelector("#phone"),
+      stage = document.querySelector("#stage");
+    let scale = 1,
+      large = false;
+    function dimensions() {
+      return document.querySelector("#size").value.split(",").map(Number);
+    }
+    function geometry() {
+      const [w, h] = dimensions();
+      stage.style.width = w + "px";
+      stage.style.height = h + "px";
+      phone.style.width = w + "px";
+      phone.style.height = h + "px";
+      const x = scale > 1 ? 25 : 0,
+        y = scale > 1 ? 35 : 0;
+      phone.style.transform = `translate(${-x * scale}px,${-y * scale}px) scale(${scale})`;
+      const v = phone.contentWindow.visualViewport;
+      v?.dispatchEvent(new phone.contentWindow.Event("resize"));
+    }
+    function init() {
+      const w = phone.contentWindow,
+        v = w.visualViewport;
+      Object.defineProperties(v, {
+        scale: { configurable: true, get: () => scale },
+        width: { configurable: true, get: () => dimensions()[0] / scale },
+        height: { configurable: true, get: () => dimensions()[1] / scale },
+        offsetLeft: { configurable: true, get: () => (scale > 1 ? 25 : 0) },
+        offsetTop: { configurable: true, get: () => (scale > 1 ? 35 : 0) },
+      });
+      const style = w.document.createElement("style");
+      style.id = "large-test";
+      w.document.head.append(style);
+      geometry();
+    }
+    phone.addEventListener("load", init);
+    document.querySelector("#size").onchange = () => {
+      scale = 1;
+      geometry();
+    };
+    document.querySelector("#zoom2").onclick = () => {
+      scale = 2;
+      geometry();
+    };
+    document.querySelector("#zoom4").onclick = () => {
+      scale = 4;
+      geometry();
+    };
+    document.querySelector("#normal").onclick = () => {
+      scale = 1;
+      geometry();
+    };
+    document.querySelector("#text").onclick = () => {
+      large = !large;
+      phone.contentDocument.querySelector("#large-test").textContent = large
+        ? ".card h2,.recovery-card h2{font-size:56px!important}.card p,.recovery-card p,.card label{font-size:34px!important}.primary,.secondary,.text-button{font-size:32px!important}"
+        : "";
+    };
+    document.querySelector("#reload").onclick = () => {
+      scale = 1;
+      phone.contentWindow.location.reload();
+    };
+    setInterval(() => {
+      let s;
+      try {
+        s = JSON.parse(localStorage.getItem("little-breaks-save-v1"));
+      } catch {}
+      document.querySelector("#saved").textContent = s
+        ? `Saved: level ${s.level} · score ${s.score} · ${s.lives} chances · ${s.bricks.filter((b) => b.hp > 0 && b.type !== "solid").length} bricks`
+        : "No saved run";
+    }, 250);
+    geometry();
+  </script>
+</html>

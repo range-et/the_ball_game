@@ -5,17 +5,17 @@ import {
   generate,
   circleRect,
   reflect,
-  validSave,
   layout,
 } from "./engine.js";
+import { SETTINGS_KEY, readProgress, writeProgress } from "./storage.js";
+import { canPause, viewportStyle, repositionBall } from "./recovery.js";
 const $ = (id) => document.getElementById(id),
   canvas = $("game"),
   ctx = canvas.getContext("2d"),
   arena = $("arena"),
   overlay = $("overlay"),
   card = $("card"),
-  KEY = "little-breaks-save-v1",
-  SETTINGS = "little-breaks-settings-v1";
+  SETTINGS = SETTINGS_KEY;
 let H = 800,
   mode = "menu",
   state,
@@ -43,11 +43,16 @@ let H = 800,
   storageOK = true,
   lastHit = 0,
   zoomed = false,
-  menuBeforeRecovery = false;
+  fitted = false;
 try {
-  Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS) || "{}"));
-  const s = JSON.parse(localStorage.getItem(KEY) || "null");
-  if (validSave(s)) saved = s;
+  const value = JSON.parse(localStorage.getItem(SETTINGS) || "{}");
+  for (const key of ["slow", "sound", "reduced"])
+    if (typeof value?.[key] === "boolean") settings[key] = value[key];
+} catch {
+  /* A broken settings entry must not hide a valid saved game. */
+}
+try {
+  ({ saved, available: storageOK } = readProgress(localStorage));
 } catch {
   storageOK = false;
 }
@@ -74,16 +79,19 @@ function makeState(level = 1, seed = Date.now() >>> 0, score = 0, lives = 3) {
 }
 state = saved ? structuredClone(saved) : makeState();
 function persist() {
+  // Keep the current run in memory even if Safari refuses storage writes.
+  saved = structuredClone(state);
   try {
-    localStorage.setItem(KEY, JSON.stringify(state));
-    saved = structuredClone(state);
-    $("footer-status").textContent = "Your place is saved.";
+    storageOK = writeProgress(localStorage, state);
   } catch {
     storageOK = false;
-    $("footer-status").textContent = "Saving unavailable. Keep this tab open.";
   }
-  if (!storageOK)
-    $("save-note").textContent = "Saving unavailable. Keep this tab open.";
+  $("footer-status").textContent = storageOK
+    ? "Your place is saved."
+    : "Saving unavailable. Keep this tab open.";
+  $("save-note").textContent = storageOK
+    ? "Your place is saved on this device."
+    : "Saving unavailable. Keep this tab open.";
 }
 function saveSettings() {
   try {
@@ -119,7 +127,12 @@ function art() {
 }
 function dialog(html) {
   overlay.hidden = false;
-  card.innerHTML = html;
+  card.innerHTML =
+    html +
+    (!storageOK
+      ? '<p class="storage-warning" role="status">This browser can’t save your game. Keep this page open to keep your place.</p>'
+      : "");
+  card.scrollTop = 0;
   syncModal();
   requestAnimationFrame(() => card.focus({ preventScroll: true }));
 }
@@ -132,6 +145,8 @@ const modalBackground = [
 ];
 function syncModal() {
   const blocked = !overlay.hidden || !$("recovery").hidden;
+  overlay.inert = !$("recovery").hidden;
+  document.body.classList.toggle("dialog-open", blocked);
   modalBackground.forEach((el) => {
     el.inert = blocked;
     el.toggleAttribute("inert", blocked);
@@ -227,7 +242,7 @@ function ballSpeed() {
   return (settings.slow ? 205 : 270) + Math.min(85, (state.level - 1) * 4);
 }
 function pause(reason = "Take a little breather.") {
-  if (!["playing", "countdown", "waiting"].includes(mode)) return;
+  if (!canPause(mode)) return;
   mode = "paused";
   keys = {};
   pointer = null;
@@ -240,6 +255,11 @@ function pause(reason = "Take a little breather.") {
   bind("menu", home);
 }
 function resume() {
+  if (zoomed || mode !== "paused") return;
+  if (!balls.length) {
+    prepare();
+    return;
+  }
   overlay.hidden = true;
   syncModal();
   countUntil = performance.now() + 2400;
@@ -380,6 +400,7 @@ function hitBrick(brick) {
     }
   }
   updateHUD();
+  persist();
 }
 function burst(x, y, color) {
   if (settings.reduced) return;
@@ -695,9 +716,10 @@ function frame(now) {
 function resize() {
   const rect = canvas.getBoundingClientRect();
   const oldH = H;
+  if (rect.width <= 0 || rect.height <= 0) return;
   H = (W * rect.height) / rect.width;
   const ratio = H / oldH;
-  balls.forEach((b) => (b.y *= ratio));
+  balls.forEach((b) => repositionBall(b, oldH, H));
   drops.forEach((d) => (d.y *= ratio));
   const dpr = Math.min(devicePixelRatio || 1, 2);
   canvas.width = Math.round(rect.width * dpr);
@@ -705,7 +727,7 @@ function resize() {
   ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
 }
 new ResizeObserver(() => {
-  if (mode === "playing") pause("The screen changed.");
+  if (canPause(mode)) pause("The screen changed.");
   resize();
 }).observe(arena);
 function move(e) {
@@ -717,8 +739,8 @@ function move(e) {
   );
 }
 canvas.addEventListener("pointerdown", (e) => {
-  if (mode !== "playing") return;
-  if (pointer !== null) return;
+  if (mode !== "playing" || zoomed) return;
+  if (!e.isPrimary || pointer !== null) return;
   pointer = e.pointerId;
   canvas.setPointerCapture(e.pointerId);
   move(e);
@@ -737,7 +759,9 @@ canvas.addEventListener("pointermove", (e) => {
   )
     move(e);
 });
-canvas.addEventListener("pointerup", () => (pointer = null));
+canvas.addEventListener("pointerup", (e) => {
+  if (e.pointerId === pointer) pointer = null;
+});
 canvas.addEventListener("pointercancel", () => {
   pointer = null;
   if (mode === "playing") pause("Let’s get comfortable.");
@@ -751,7 +775,11 @@ canvas.addEventListener(
   { passive: false },
 );
 window.addEventListener("keydown", (e) => {
-  if (["ArrowLeft", "ArrowRight", " "].includes(e.key) && overlay.hidden) {
+  if (
+    ["ArrowLeft", "ArrowRight", " "].includes(e.key) &&
+    overlay.hidden &&
+    !zoomed
+  ) {
     e.preventDefault();
     keys[e.key] = true;
     if (e.key === " " && !e.repeat) {
@@ -800,48 +828,47 @@ function checkZoom() {
   const v = window.visualViewport;
   if (!v) return;
   const enlarged = v.scale > 1.08;
-  if (enlarged) {
-    // Keep the help panel inside the visible part of a pinch-zoomed page.
-    // This scales only the help panel; it does not reset Safari or user settings.
-    Object.assign($("recovery").style, {
-      inset: "auto",
-      left: `${v.offsetLeft}px`,
-      top: `${v.offsetTop}px`,
-      width: `${v.width * v.scale}px`,
-      height: `${v.height * v.scale}px`,
-      transformOrigin: "top left",
-      transform: `scale(${1 / v.scale})`,
-    });
+  if (fitted && enlarged) {
+    Object.assign(document.querySelector(".app").style, viewportStyle(v));
+    return;
   }
+  if (!enlarged && fitted) {
+    fitted = false;
+    document.querySelector(".app").removeAttribute("style");
+    document.querySelector(".app").classList.remove("fitted");
+  }
+  if (enlarged) Object.assign($("recovery").style, viewportStyle(v));
   if (enlarged && !zoomed) {
+    if (canPause(mode)) pause("Your game is safe.");
     zoomed = true;
-    menuBeforeRecovery = mode === "menu";
-    if (["playing", "countdown"].includes(mode)) pause("Your game is safe.");
     $("recovery").hidden = false;
-    $("fit").textContent = "Show me how to fit the screen";
+    $("recovery-message").textContent = storageOK
+      ? "The screen looks zoomed in. Your place is saved."
+      : "The screen looks zoomed in. Your game is paused. Keep this page open.";
+    syncModal();
     $("fit").focus({ preventScroll: true });
-  } else if (!enlarged && zoomed) {
-    zoomed = false;
-    $("recovery").hidden = true;
-    $("recovery").removeAttribute("style");
-    resize();
-    if (!menuBeforeRecovery && mode === "paused") {
-      /* Resume remains an explicit choice. */
-    }
-    if (!overlay.hidden) card.focus({ preventScroll: true });
-  }
+  } else if (!enlarged && zoomed) closeRecovery();
+}
+function closeRecovery() {
+  zoomed = false;
+  $("recovery").hidden = true;
+  $("recovery").removeAttribute("style");
+  syncModal();
+  resize();
+  if (!overlay.hidden) card.focus({ preventScroll: true });
 }
 window.visualViewport?.addEventListener("resize", checkZoom);
 window.visualViewport?.addEventListener("scroll", checkZoom);
 bind("fit", () => {
-  if ((window.visualViewport?.scale || 1) > 1.08) {
-    $("fit-note").textContent =
-      "Safari needs your help: bring two fingers together to make the page smaller. You won’t lose your place.";
-  } else {
-    $("recovery").hidden = true;
-    zoomed = false;
-    resize();
+  const v = window.visualViewport;
+  if (v?.scale > 1.08) {
+    // Explicit one-tap escape: fit our content inside the visible viewport.
+    // Safari's actual zoom stays as the user set it.
+    fitted = true;
+    document.querySelector(".app").classList.add("fitted");
+    Object.assign(document.querySelector(".app").style, viewportStyle(v));
   }
+  closeRecovery();
 });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
@@ -850,10 +877,12 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 window.addEventListener("pagehide", () => {
+  pause("Welcome back, whenever you’re ready.");
   if (saved) persist();
 });
+window.addEventListener("pageshow", checkZoom);
 window.addEventListener("blur", () => {
-  if (mode === "playing") pause();
+  if (canPause(mode)) pause();
 });
 bind("pause", () => {
   if (mode === "playing" || mode === "countdown") pause();

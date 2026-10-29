@@ -25,7 +25,8 @@
     <div class="app">
       <header class="masthead">
         <a class="brand" href="./" aria-label="the ball game home"
-          ><span class="brand-icon" aria-hidden="true">▦</span> the ball game<span class="brand-dot">.</span></a
+          ><span class="brand-icon" aria-hidden="true">▦</span> the ball
+          game<span class="brand-dot">.</span></a
         ><span class="edition">A LITTLE EVERYDAY PLAY</span
         ><button id="sound" class="text-button" aria-pressed="false">
           Sound off
@@ -135,19 +136,21 @@
       aria-labelledby="recovery-title"
     >
       <div class="recovery-card">
-        <span class="eyebrow">EVERYTHING IS SAFE</span>
-        <h2 id="recovery-title">Let’s get the game<br />back on screen.</h2>
-        <p id="recovery-message">
-          The screen looks zoomed in. Your game is paused.
-        </p>
-        <div class="pinch-demo" aria-hidden="true">
-          <span>↘</span><span>↙</span>
+        <div class="recovery-copy">
+          <span class="eyebrow">YOUR GAME IS PAUSED</span>
+          <h2 id="recovery-title">Let’s get the game<br />back on screen.</h2>
+          <p id="recovery-message">
+            The screen looks zoomed in. Your game is paused.
+          </p>
+          <div class="pinch-demo" aria-hidden="true">
+            <span>↘</span><span>↙</span>
+          </div>
+          <p>Place two fingers on the screen<br />and bring them together.</p>
         </div>
-        <p>Place two fingers on the screen<br />and bring them together.</p>
-        <button id="fit" class="primary">Fit game to screen</button>
-        <p class="small" id="fit-note">
-          If it stays enlarged, use the two-finger gesture above.
-        </p>
+        <div class="recovery-actions">
+          <button id="fit" class="primary">Fit game to screen</button>
+          <p class="small" id="fit-note">Your place stays the same.</p>
+        </div>
       </div>
     </div>
     <script type="module" src="game.js"></script>

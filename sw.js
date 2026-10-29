@@ -1,10 +1,12 @@
-const CACHE = "the-ball-game-v2";
+const CACHE = "the-ball-game-v3";
 const FILES = [
   "./",
   "./index.html",
   "./style.css",
   "./game.js",
   "./engine.js",
+  "./storage.js",
+  "./recovery.js",
   "./icon.svg",
   "./manifest.webmanifest",
 ];
@@ -17,7 +19,11 @@ self.addEventListener("activate", (e) => {
       .keys()
       .then((keys) =>
         Promise.all(
-          keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)),
+          keys
+            .filter(
+              (k) => /^(the-ball-game-|little-breaks-v)/.test(k) && k !== CACHE,
+            )
+            .map((k) => caches.delete(k)),
         ),
       )
       .then(() => self.clients.claim()),
