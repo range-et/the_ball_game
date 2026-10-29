@@ -800,6 +800,19 @@ function checkZoom() {
   const v = window.visualViewport;
   if (!v) return;
   const enlarged = v.scale > 1.08;
+  if (enlarged) {
+    // Keep the help panel inside the visible part of a pinch-zoomed page.
+    // This scales only the help panel; it does not reset Safari or user settings.
+    Object.assign($("recovery").style, {
+      inset: "auto",
+      left: `${v.offsetLeft}px`,
+      top: `${v.offsetTop}px`,
+      width: `${v.width * v.scale}px`,
+      height: `${v.height * v.scale}px`,
+      transformOrigin: "top left",
+      transform: `scale(${1 / v.scale})`,
+    });
+  }
   if (enlarged && !zoomed) {
     zoomed = true;
     menuBeforeRecovery = mode === "menu";
@@ -810,6 +823,7 @@ function checkZoom() {
   } else if (!enlarged && zoomed) {
     zoomed = false;
     $("recovery").hidden = true;
+    $("recovery").removeAttribute("style");
     resize();
     if (!menuBeforeRecovery && mode === "paused") {
       /* Resume remains an explicit choice. */
