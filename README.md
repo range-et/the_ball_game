@@ -1,4 +1,4 @@
-# Little Breaks
+# the ball game
 
 A gentle, responsive 2D brick breaker for iPhone browsers, built with native JavaScript and Canvas. No runtime dependencies or backend.
 

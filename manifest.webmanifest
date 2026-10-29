@@ -1,6 +1,6 @@
 {
-  "name": "Little Breaks",
-  "short_name": "Little Breaks",
+  "name": "the ball game",
+  "short_name": "the ball game",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
