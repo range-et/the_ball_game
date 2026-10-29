@@ -48,3 +48,13 @@ The local-only `/tests/phone-lab.html` loads the real app in a frame, magnifies 
 Test Safari and Home Screen mode with the toolbar expanded/collapsed, portrait/landscape rotation, actual pinch zoom and Fit, enlarged text and Display Zoom. Verify native finger tracking after fitting (desktop pointer dragging was checked in the simulation). Switch apps during both a countdown and retry, then close and reopen the page and compare progress. System accessibility Zoom is outside the page's control and needs a separate manual check.
 
 Browser data deletion, private-mode cleanup, storage eviction, or an unsuccessful storage write followed by closing the page can still remove device-local saves. The game reports write failures; it cannot promise persistence when the browser refuses or deletes storage.
+
+## Procedural-level audit update
+
+The generator now combines twelve parameterized layout families with seeded gaps, margins, row spacing, mirroring, silhouettes, armor and permanent-obstacle placement. Every seventh board is a reward level with single-hit bricks and no permanent obstacles; all other armor remains capped at three hits. The opening board has three simple rows and a wider-paddle bonus.
+
+Every new board is validated before play using a coordinate-compressed search for a ball center around permanent geometry, including two extra units of obstacle clearance. If a target cannot be touched from the paddle region, permanent obstacles are converted into breakable bricks until it has a route. This proves a geometric route through destructible geometry; it does not prove a human player will clear it or predict every moving-ball trajectory.
+
+`npm run audit:levels` passed **100,000 boards / 300,000 geometry checks**, covering five through twelve columns, logical field heights 180/480/1200, ordinary levels 1–10,000 and samples near one billion, one trillion, and the safe-integer limit. No unreachable targets or invalid save states were found; 428,888 permanent bricks were checked. Separate reference tests rasterized actual circle collisions for 288 representative board/height combinations, and autoplay cleared levels 1, 4 and 100 through the real game update and level-transition code. The full suite now has **22 passing tests**.
+
+The generator hashes the full level number to avoid large-index multiplication precision loss. Existing saved boards are preserved. At the safe-integer counter limit it advances the seed rather than overflowing, so another board is still available. Long-run novelty is procedural, not a claim that an infinite set of finite layouts can never repeat. The local-only `/tests/level-gallery.html` displays twelve representative boards and is excluded from deployment.

@@ -4,7 +4,7 @@ A gentle, responsive 2D brick breaker for iPhone browsers, built with native Jav
 
 ## Run
 
-`npm run dev` then open http://localhost:5173. `npm test` runs 16 checks covering generation, collisions, storage backups, zoom recovery, rotation, interruptions, and safe retries. `npm run check` checks JavaScript syntax.
+`npm run dev` then open http://localhost:5173. `npm test` runs 22 checks covering generation, collisions, storage backups, zoom recovery, rotation, interruptions, and safe retries. `npm run check` checks JavaScript syntax.
 
 ## Play
 
@@ -12,7 +12,7 @@ Slide one finger across the field, move the mouse, or use arrow keys. Space paus
 
 Progress is stored in localStorage on this device and origin after every brick hit, with a second backup copy. Settings failures do not discard valid saved games. Active ball positions and temporary bonuses restart safely on reopening; brick damage, score, lives, seed and level persist. Clearing website data or private browsing can remove saves. Storage failures are reported in dialogs; the current run stays in memory so returning to the menu does not discard it.
 
-Levels use repeatable seeds, five pattern families, isolated solid obstacles and gradually increasing armor. New levels adapt column count to screen width; existing boards preserve topology on rotation. There are no closed solid shells. Ball travel uses small collision steps; stall assistance redirects a ball after 28 seconds without progress.
+Levels use repeatable seeds, twelve pattern families, variable spacing and silhouettes, and permanent obstacles. Every newly generated board runs a ball-clearance reachability check; inaccessible obstacles are softened into breakable bricks. New levels adapt column count to screen width; existing boards preserve topology on rotation. Armor is capped at three hits, and every seventh level is a gentler reward board. `npm run audit:levels` checks 100,000 boards across eight column counts and three field heights. At the JavaScript safe-integer counter limit, the seed advances while the level label remains capped, so play can continue. Ball travel uses small collision steps; stall assistance redirects a ball after 28 seconds without progress.
 
 ## iPhone behavior
 

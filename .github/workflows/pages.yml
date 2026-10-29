@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm test && npm run check
+      - run: npm test && npm run check && npm run audit:levels
       - name: Prepare static files
         run: |
           mkdir _site

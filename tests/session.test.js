@@ -128,7 +128,7 @@ function gameHarness(data = new Map(), denied = false, initialScale = 1) {
   ).replace(/^import[\s\S]*?from [^\n]+;\n/gm, "");
   vm.runInContext(
     source +
-      `\nglobalThis.api={get state(){return state},get saved(){return saved},get mode(){return mode},get zoomed(){return zoomed},get fitted(){return fitted},get balls(){return balls},get height(){return H},get pointer(){return pointer},home,prepare,launch,pause,resume,lose,nextLevel,hitBrick,checkZoom,resize,frame, persist, start(){resetRound();prepare();document.getElementById('launch').emit('click')},setBalls(value){balls=value}};`,
+      `\nglobalThis.api={get state(){return state},get saved(){return saved},get mode(){return mode},get zoomed(){return zoomed},get fitted(){return fitted},get balls(){return balls},get height(){return H},get pointer(){return pointer},home,prepare,launch,pause,resume,lose,nextLevel,hitBrick,checkZoom,resize,frame, persist, start(){resetRound();prepare();document.getElementById('launch').emit('click')},setBalls(value){balls=value},aim(value){target=value},step(dt,now){update(dt,now)}};`,
     context,
   );
   return {
@@ -339,4 +339,82 @@ test("pagehide alone pauses an active game before back-forward caching", () => {
   h.api.frame(100000);
   assert.equal(snapshot(h), before);
   assert.equal(h.api.mode, "paused");
+});
+
+test("autoplay clears generated boards through the real collision and level-transition code", () => {
+  for (const level of [1, 4, 100]) {
+    const h = gameHarness();
+    h.api.state.level = level;
+    h.api.state.seed = 42;
+    h.api.state.bricks = engine.generate(level, 42, 5);
+    h.api.start();
+    let now = 1000,
+      retries = 0;
+    for (
+      let tick = 0;
+      tick < 120 * 900 && h.api.state.level === level;
+      tick++
+    ) {
+      now += 1000 / 120;
+      h.clock(now);
+      if (h.api.mode === "waiting") {
+        retries++;
+        h.api.state.lives = 3;
+        h.api.start();
+      }
+      const ball = h.api.balls.find((b) => b.vy > 0) || h.api.balls[0];
+      if (ball) {
+        const time =
+          ball.vy > 0
+            ? (engine.layout(h.api.height).paddleY - engine.R - ball.y) /
+              ball.vy
+            : 0;
+        let x = ball.x + ball.vx * Math.max(0, time);
+        const span = engine.W - 2 * engine.R;
+        x = (((x - engine.R) % (2 * span)) + 2 * span) % (2 * span);
+        if (x > span) x = 2 * span - x;
+        h.api.aim(engine.R + x + Math.sin(now / 1800) * 20);
+        if (ball.held) {
+          h.nodes.get("game").emit("pointerdown", {
+            pointerId: 1,
+            isPrimary: true,
+            clientX: 175,
+            preventDefault() {},
+          });
+          h.nodes.get("game").emit("pointerup", { pointerId: 1 });
+        }
+      }
+      h.api.step(1 / 120, now);
+    }
+    assert.equal(
+      h.api.state.level,
+      level + 1,
+      JSON.stringify({
+        level,
+        retries,
+        remaining: h.api.state.bricks.filter(
+          (b) => b.type !== "solid" && b.hp > 0,
+        ).length,
+      }),
+    );
+    assert.equal(h.api.mode, "waiting");
+    assert(h.nodes.get("next"));
+  }
+});
+
+test("the largest saved level continues to another board instead of overflowing", () => {
+  const h = gameHarness();
+  h.api.state.level = Number.MAX_SAFE_INTEGER;
+  h.api.state.seed = 42;
+  h.api.state.bricks = engine.generate(h.api.state.level, 42, 5);
+  h.api.nextLevel();
+  assert.equal(h.api.state.level, Number.MAX_SAFE_INTEGER);
+  assert.notEqual(h.api.state.seed, 42);
+  assert(engine.validSave(h.api.state));
+  assert.equal(h.api.mode, "waiting");
+  assert(h.nodes.get("next"));
+  const prior = h.api.state.seed;
+  h.api.nextLevel();
+  assert.notEqual(h.api.state.seed, prior);
+  assert(engine.validSave(h.api.state));
 });

@@ -6,6 +6,9 @@ import {
   circleRect,
   reflect,
   layout,
+  levelRecipe,
+  nextLevelIdentity,
+  brickRect,
 } from "./engine.js";
 import { SETTINGS_KEY, readProgress, writeProgress } from "./storage.js";
 import { canPause, viewportStyle, repositionBall } from "./recovery.js";
@@ -56,13 +59,6 @@ try {
 } catch {
   storageOK = false;
 }
-const names = [
-  "A fresh start",
-  "Room to wander",
-  "Find the heart",
-  "Around the edges",
-  "A different angle",
-];
 function makeState(level = 1, seed = Date.now() >>> 0, score = 0, lives = 3) {
   return {
     version: 1,
@@ -225,10 +221,10 @@ function field() {
   return layout(H);
 }
 function brickY(b) {
-  return field().brickTop + (b.y - 0.105) * field().brickScale;
+  return brickRect(b, H).y;
 }
 function brickHeight(b) {
-  return b.h * field().brickScale;
+  return brickRect(b, H).h;
 }
 function launch() {
   const speed = ballSpeed();
@@ -277,7 +273,10 @@ function updateHUD() {
   $("lives").textContent =
     "● ".repeat(state.lives) + "○ ".repeat(3 - Math.min(3, state.lives));
   $("lives").setAttribute("aria-label", `${state.lives} chances`);
-  $("field-name").textContent = names[(state.level - 1) % 5].toUpperCase();
+  $("field-name").textContent = levelRecipe(
+    state.level,
+    state.seed,
+  ).name.toUpperCase();
   const n = state.bricks.filter((b) => b.type !== "solid" && b.hp > 0).length;
   $("remaining").textContent = `${n} BRICKS`;
   $("pause").disabled = mode === "menu";
@@ -345,7 +344,8 @@ function lose() {
 function nextLevel() {
   mode = "waiting";
   resetRound();
-  state.level++;
+  const clearedLevel = state.level;
+  Object.assign(state, nextLevelIdentity(state.level, state.seed));
   state.lives = Math.min(3, state.lives + 1);
   state.bricks = generate(
     state.level,
@@ -356,7 +356,7 @@ function nextLevel() {
   updateHUD();
   beep(800);
   dialog(
-    `${art()}<span class="eyebrow">BEAUTIFULLY DONE</span><h2>A lovely little win.</h2><p>Level ${state.level - 1} is clear.<br>Your next level is ready.</p>${button("next", "Play level " + state.level)}${button("rest", "Take a break", "secondary")}<p class="small">Your progress is saved. Come back anytime.</p>`,
+    `${art()}<span class="eyebrow">BEAUTIFULLY DONE</span><h2>A lovely little win.</h2><p>Level ${clearedLevel} is clear.<br>Your next level is ready.</p>${button("next", "Play level " + state.level)}${button("rest", "Take a break", "secondary")}<p class="small">Your progress is saved. Come back anytime.</p>`,
   );
   bind("next", prepare);
   bind("rest", home);

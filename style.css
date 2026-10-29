@@ -736,3 +736,10 @@ body.dialog-open {
     margin-left: auto;
   }
 }
+@media (max-height: 550px) and (orientation: landscape) {
+  /* Keep ball-sized passages meaningful even on very wide, short windows. */
+  .arena {
+    max-width: calc((100dvh - 112px) * 3.3);
+    margin-inline: auto;
+  }
+}
